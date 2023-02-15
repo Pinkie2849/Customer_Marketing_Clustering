@@ -4,8 +4,8 @@ from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
 import matplotlib.pyplot as plt
 import seaborn as sns
+import plotly.graph_objs as go
 
-# Load the data
 df = pd.read_csv('Python/market.csv')
 
  
@@ -70,23 +70,19 @@ segment = kmeans_pca.predict(pca_input)
 # Return the segment assigned to the input data
 st.write(f'Your customer segment is: {df_segm_pca.loc[segment[0], "Segment"]}')
 
-import plotly.graph_objs as go
-
 # Create the scatter plot using Plotly Go
 fig = go.Figure()
 
 # Add traces for each segment
 segments = df_segm_pca['Segment'].unique()
 colors = ['green', 'red', 'cyan', 'magenta', 'blue']
-sizes = [20000, 30000, 30000, 20000, 30000]
 
 for i, segment in enumerate(segments):
     x = df_segm_pca.loc[df_segm_pca['Segment'] == segment, 'component 2']
     y = df_segm_pca.loc[df_segm_pca['Segment'] == segment, 'component 1']
     fig.add_trace(go.Scatter(x=x, y=y, mode='markers', marker=dict(size=10, color=colors[i], line=dict(width=2, color=colors[i])), name=segment))
+fig.add_trace(go.Scatter(x=[pca_input[0,0]], y=[pca_input[0,1]]))
 
-# Add additional markers
-fig.add_trace(go.Scatter(x=[-7, -1.2, 40, -46, 1], y=[-48, 2, -5, 12, 45], mode='markers', marker=dict(size=sizes, color=colors, line=dict(width=2, color=colors)), opacity=0.2, showlegend=False))
 
 # Set the layout
 fig.update_layout(title='Component 1 vs Component 2', width=800, height=600)
