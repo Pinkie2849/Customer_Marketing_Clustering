@@ -42,26 +42,47 @@ PROC SGPLOT data=Market_Analysis;
 RUN;
 ods graphics / reset;
 
- ods graphics / reset width=10 in height=5 in imagemap;
-PROC SGPLOT data=Market_Analysis;
-  VBAR Age / response='Annual Income (k$) 'n GROUP=Age STAT=MEAN;
-RUN;
-ods graphics / reset;
+/* Create a table that contains the cluster labels */
+proc sql;
+  create table can_clusters as
+  select cluster, case(cluster)
+    when 1 then "Cluster 1"
+    when 2 then "Cluster 2"
+    when 3 then "Cluster 3"
+    when 4 then "Cluster 4"
+    end as cluster_label
+  from can;
+quit;
 
-/*Use PCA to reduce the variables to 2*/
-proc princomp data=Market_Analysis out=pca_results;
-  var Age 'Annual Income (k$) 'n 'Spending Score (1-100)'n;
+/* Join the cluster labels to the original data set and use the new variable in the SCATTER statement */
+proc sql;
+  create table can_labeled as
+  select can.*, clusters.cluster_label
+  from can left join can_clusters as clusters
+  on can.cluster = clusters.cluster;
+quit;
+
+proc sgplot data=can_labeled;
+  title "Cluster Analysis for Marketing Segmentation";
+  scatter y='Annual Income (k$)'n x=Age / group=cluster_label;
 run;
 
- /*2D visualization */
- proc sgplot data=pca_results;
-  scatter x=Age y='Annual Income (k$) 'n;
 
-proc sgplot data=pca_results;
-  scatter x='Annual Income (k$) 'n y='Spending Score (1-100)'n;
-  
- proc sgplot data=pca_results;
-  scatter x=Age y='Spending Score (1-100)'n; 
+ /*2D visualization */
+ proc sgplot data = can;
+  title "Cluster Analysis for Marketing Segmentation";
+scatter y = 'Spending Score (1-100)'n x = 'Annual Income (k$)'n / group = cluster;
+run;
+
+ proc sgplot data = can;
+  title "Cluster Analysis for Marketing Segmentation";
+scatter y = 'Spending Score (1-100)'n x = Age  / group = cluster;
+run;
+
+ proc sgplot data = can;
+  title "Cluster Analysis for Marketing Segmentation";
+scatter y = 'Annual Income (k$)'n x = Age / group = cluster;
+run; 
   
 /*Finding the optimum number of clusters using KMeans and also on a plot using the elbow method */
 ods graphics / reset;
@@ -71,22 +92,20 @@ run;
 
 ods graphics on;
 proc cluster data = work.market_analysis method = centroid ccc print=15 outtree=Tree;
-var 'Annual Income (k$)'n'Spending Score (1-100)'n;
+var Age 'Annual Income (k$)'n'Spending Score (1-100)'n;
 run;
 ods graphics off;
 
 proc tree noprint ncl=4 out=out;
-copy 'Annual Income (k$)'n'Spending Score (1-100)'n;
+copy Age 'Annual Income (k$)'n'Spending Score (1-100)'n;
 run;
 
 proc candisc out = can;
 class cluster;
-var 'Annual Income (k$)'n 'Spending Score (1-100)'n;
+var Age 'Annual Income (k$)'n 'Spending Score (1-100)'n;
 run;
-proc sgplot data = can;
-title "Cluster Analysis for Marketing Segmentation";
-scatter y = can2 x = can1 / group = cluster;
-run;
+
+
 
 
 
